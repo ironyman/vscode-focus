@@ -6,6 +6,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as os from 'os';
 import { v4 as uuidv4 } from 'uuid';
+import * as process from 'process';
 
 import { DbgChannel, assert } from './debug';
 
@@ -83,10 +84,12 @@ class FocusCodeLensProvider implements vscode.CodeLensProvider {
 	}
 }
 
-async function FocusOnLinesInSplitWindow(editor: vscode.TextEditor, fullLineStart: number, fullLineEnd: number) {
+async function FocusOnLinesInSplitWindow(editor: vscode.TextEditor, fullLineStart: number, fullLineEnd: number, functionName: string) {
 	const tempDir = os.tmpdir();
 	const ext = path.extname(editor.document.fileName);
-	const tempFileName = path.join(tempDir, uuidv4() + '.' + ext);
+	const prefix = (functionName + '-') || '';
+
+	const tempFileName = path.join(tempDir, prefix + uuidv4() + ext);
 
 	const focusedFileUri = vscode.Uri.file(tempFileName).with({ scheme: 'untitled' });
 	const focusedDoc = await vscode.workspace.openTextDocument(focusedFileUri);
@@ -219,16 +222,17 @@ export function activate(context: vscode.ExtensionContext) {
 			return;
 		}
 
-		FocusOnLinesInSplitWindow(activeTextEditor, activeTextEditor.selection.start.line, activeTextEditor.selection.end.line);
+		FocusOnLinesInSplitWindow(activeTextEditor, activeTextEditor.selection.start.line, activeTextEditor.selection.end.line, '');
 	}));
 
-	context.subscriptions.push(vscode.commands.registerCommand('focus.onFunction', async (functionName, fullLineStart, fullLineEnd) => {
+	context.subscriptions.push(vscode.commands.registerCommand('focus.onFunction', 
+			async (functionName: string, fullLineStart: number, fullLineEnd: number) => {
 		let activeTextEditor = vscode.window.activeTextEditor;
 		if (!activeTextEditor) {
 			return;
 		}
         
-		FocusOnLinesInSplitWindow(activeTextEditor, fullLineStart, fullLineEnd);
+		FocusOnLinesInSplitWindow(activeTextEditor, fullLineStart, fullLineEnd, functionName);
 	}));
 
 	const languages = ["javascript", "typescript", "c", "c++"];
