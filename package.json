@@ -31,7 +31,7 @@
 		"commands": [
 			{
 				"command": "focus.onSelection",
-				"title": "Focus on selection in a new editor"
+				"title": "Split function or selection into a new editor"
 			}
 		],
 		"menus": {
@@ -41,7 +41,14 @@
 					"group": "myGroup@1"
 				}
 			]
-		}
+		},
+		"keybindings": [
+			{
+				"command": "focus.onSelection",
+				"key": "ctrl+alt+s",
+				"mac": "cmd+alt+s"
+			}
+		]
 	},
 	"scripts": {
 		"vscode:prepublish": "npm run compile",

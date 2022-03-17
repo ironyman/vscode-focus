@@ -217,12 +217,28 @@ export function activate(context: vscode.ExtensionContext) {
 	context.subscriptions.push(vscode.commands.registerCommand('focus.onSelection', async () => {
 		let activeTextEditor = vscode.window.activeTextEditor;
 		if (!activeTextEditor 
-			|| activeTextEditor.selections.length != 1
-			|| activeTextEditor.selection.start == activeTextEditor.selection.end) {
+			|| activeTextEditor.selections.length != 1) {
 			return;
 		}
 
-		FocusOnLinesInSplitWindow(activeTextEditor, activeTextEditor.selection.start.line, activeTextEditor.selection.end.line, '');
+		if (activeTextEditor.selection.start.isBefore(activeTextEditor.selection.end)) {
+			await FocusOnLinesInSplitWindow(activeTextEditor, activeTextEditor.selection.start.line, activeTextEditor.selection.end.line, '');
+			return;
+		} 
+
+		const symbols: Array<vscode.SymbolInformation> = await vscode.commands.executeCommand(
+			'vscode.executeDocumentSymbolProvider', activeTextEditor.document.uri);
+
+		for (let s of symbols) {
+			if (s.kind != vscode.SymbolKind.Function) {
+				continue;
+			}
+
+			if (s.location.range.contains(activeTextEditor.selection.start)) {
+				await FocusOnLinesInSplitWindow(activeTextEditor, s.location.range.start.line, s.location.range.end.line, s.name);
+				return;
+			}
+		}
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('focus.onFunction', 
