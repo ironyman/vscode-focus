@@ -108,7 +108,8 @@ async function FocusOnLinesInSplitWindow(editor: vscode.TextEditor, fullLineStar
 	// Actually show the editor
 	// vscode.commands.executeCommand('vscode.open', focusedFileUri);
 	let focusedEditor = await vscode.window.showTextDocument(focusedDoc, { 
-		preview: false,
+		preview: true,
+		preserveFocus: true,
 		viewColumn: vscode.ViewColumn.Beside
 	});
 
