@@ -2,7 +2,7 @@
 	"name": "focus",
 	"displayName": "Focus function",
 	"description": "Focus a portion of a document in another editor",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"publisher": "ironyman",
 	"private": true,
 	"license": "MIT",
