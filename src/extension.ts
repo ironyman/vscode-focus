@@ -34,6 +34,10 @@ export class FocusDocumentBinding {
 		this.fullLineEnd = fullLineEnd;
 		this.focused = focused;
 	}
+
+	toString() {
+		return this.full.document.fileName;
+	}
 }
 
 let bindings: Array<FocusDocumentBinding> = [];
@@ -128,7 +132,7 @@ export function activate(context: vscode.ExtensionContext) {
 	// BUG: The first changes in full document has no event.contentChanges. Is it vscode bug?
 	// BUG: C-z in focused document will delete everything in focused document as well as full document
 	context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(async (event: vscode.TextDocumentChangeEvent) => {
-		if (handlingChange) {
+		if (handlingChange || bindings.length == 0) {
 			return;
 		}
 
@@ -193,26 +197,26 @@ export function activate(context: vscode.ExtensionContext) {
 		// 	}
 		// })
 	}));
+	
+	context.subscriptions.push(vscode.window.onDidChangeVisibleTextEditors(async (editors: readonly vscode.TextEditor[]) => {
+		for (let i = bindings.length - 1; i >= 0; --i) {
+			let bindingBroken = false;
+			let b = bindings[i];
 
-	context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(async (doc: vscode.TextDocument) => {
-		let binding, source, target;
-		try {
-			[binding, source, target] = findBindingDirection(doc.uri)
-		} catch (e: any) {
-			// Lots of noise.
-			// DbgChannel.appendLine(e.message);
-			return;
+			if (editors.find(e => e.document.uri == b.full.document.uri) == undefined) {
+				await vscode.window.showTextDocument(b.focused.document.uri, {preview: true, preserveFocus: false});
+				vscode.commands.executeCommand('workbench.action.closeActiveEditor');
+				bindingBroken = true;
+			}
+			if (editors.find(e => e.document.uri == b.focused.document.uri) == undefined) {
+				bindingBroken = true;
+			}
+
+			if (bindingBroken) {
+				bindings.splice(i, 1);
+				// DbgChannel.appendLine(bindings.toString());
+			}
 		}
-
-		if (doc.uri == binding.full.document.uri) {
-			await vscode.window.showTextDocument(target.document.uri, {preview: true, preserveFocus: false});
-			vscode.commands.executeCommand('workbench.action.closeActiveEditor');
-		} else {
-			assert(doc.uri == target.document.uri);
-		}
-
-		let index = bindings.indexOf(binding);
-		bindings.splice(index, 1);
 	}));
 
 	context.subscriptions.push(vscode.commands.registerCommand('focus.onSelection', async () => {
